@@ -15,7 +15,9 @@ $sizes: (
 
 .container {
   display: grid;
+  width: fit-content;
   grid-template-columns: repeat(7, auto);
+  margin: 0 auto;
   grid-gap: 10px;
 }
 

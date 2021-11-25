@@ -45,7 +45,7 @@ const generateMockData = (n: number): Item[] => {
   }));
 };
 
-function App() {
+const App = () => {
   const [items] = useState(generateMockData(21));
   const [selectedIds, setSelectedItems] = useState(Set<number>());
 
@@ -82,7 +82,7 @@ function App() {
       </div>
     </div>
   );
-}
+};
 
 const ItemBox = ({
   item: { id, dot, size, color },
@@ -109,8 +109,6 @@ const ItemBox = ({
     </div>
   );
 };
-
-export default App;
 
 const Stats = ({
   target,
@@ -179,3 +177,5 @@ const TargetChart = ({
     </div>
   );
 };
+
+export default App;
