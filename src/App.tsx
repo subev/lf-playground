@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import cx from 'classnames';
 import './App.scss';
 import { Set } from 'immutable';
@@ -19,43 +19,63 @@ const pickRandomFromArray = <T extends unknown>(arr: T[]) => {
   return arr[Math.floor(Math.random() * arr.length)];
 };
 
+const capitalize = (str: string) => {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+const toPercent = (x: number) => {
+  return `${Math.round(x * 100)}%`;
+};
+
 const pickRandomDot = (): Dot => {
   return Object.values(Dot)[
     Math.floor(Math.random() * Object.values(Dot).length)
   ];
 };
 
+const colors = ['blue', 'green', 'orange'];
+const sizes = ['small', 'large'];
+
 const generateMockData = (n: number): Item[] => {
   return Array.from({ length: n }, (_, idx) => ({
     id: idx,
-    color: pickRandomFromArray(['blue', 'green', 'orange']),
-    size: pickRandomFromArray(['small', 'large']),
+    color: pickRandomFromArray(colors),
+    size: pickRandomFromArray(sizes),
     dot: pickRandomDot(),
   }));
 };
 
 function App() {
   const [items] = useState(generateMockData(21));
-  const [selectedItems, setSelectedItems] = useState(Set<number>());
+  const [selectedIds, setSelectedItems] = useState(Set<number>());
 
   const handleSelect = (id: number) => {
-    if (selectedItems.has(id)) {
-      setSelectedItems(selectedItems.delete(id));
+    if (selectedIds.has(id)) {
+      setSelectedItems(selectedIds.delete(id));
     } else {
-      setSelectedItems(selectedItems.add(id));
+      setSelectedItems(selectedIds.add(id));
     }
   };
-  console.log({ selectedItems: selectedItems.toJS() });
+
+  const [target] = useState<{
+    propName: keyof Item;
+    value: Item[keyof Item];
+    ratio: number;
+  }>({
+    propName: 'size',
+    value: 'small',
+    ratio: 0.6,
+  });
 
   return (
     <div className="App">
-      <h3>Awesome</h3>
+      <Stats target={target} items={items} selectedIds={selectedIds} />
       <div className="container">
         {items.map((i, idx) => (
           <ItemBox
             key={idx}
             item={i}
-            selected={selectedItems.has(i.id)}
+            selected={selectedIds.has(i.id)}
             onSelect={handleSelect}
           />
         ))}
@@ -91,3 +111,71 @@ const ItemBox = ({
 };
 
 export default App;
+
+const Stats = ({
+  target,
+  items,
+  selectedIds,
+}: {
+  target: { propName: keyof Item; value: Item[keyof Item]; ratio: number };
+  items: Item[];
+  selectedIds: Set<number>;
+}) => {
+  const { actual, difference } = useMemo(() => {
+    const { propName, value, ratio } = target;
+    const selectedItems = items.filter((item) => selectedIds.has(item.id));
+
+    if (selectedItems.length === 0) {
+      return {
+        actual: 0,
+        difference: target.ratio,
+      };
+    }
+
+    const itemsMatchingTarget = selectedItems.filter(
+      (i) => i[propName] === value
+    );
+    const actual = itemsMatchingTarget.length / selectedItems.length;
+    const difference = Math.abs(actual - ratio);
+    return {
+      actual,
+      difference,
+    };
+  }, [items, selectedIds, target]);
+
+  return (
+    <div className="stats">
+      <div>
+        {capitalize(String(target.value))} Target: {toPercent(target.ratio)}
+      </div>
+      <TargetChart actual={actual} target={target.ratio} />
+      <div className="live-stats">
+        <div>Actual: {toPercent(actual)}</div>
+        <div>Difference: {toPercent(difference)}</div>
+      </div>
+    </div>
+  );
+};
+
+const TargetChart = ({
+  actual,
+  target,
+}: {
+  actual: number;
+  target: number;
+}) => {
+  return (
+    <div className="target-chart">
+      <div className="marker-wrapper">
+        <div className="marker" style={{ left: toPercent(target) }}></div>
+      </div>
+      <div className="center-line"></div>
+      <div className="marker-wrapper">
+        <div
+          className="marker bottom-marker"
+          style={{ left: toPercent(actual) }}
+        ></div>
+      </div>
+    </div>
+  );
+};
