@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import cx from 'classnames';
 import './App.scss';
 import { Set } from 'immutable';
@@ -15,7 +15,7 @@ type Item = {
   size: string;
 };
 
-const pickRandomFromArray = <T extends unknown>(arr: T[]) => {
+const pickRandomFromArray = <T extends unknown>(arr: Readonly<T[]>) => {
   return arr[Math.floor(Math.random() * arr.length)];
 };
 
@@ -33,8 +33,8 @@ const pickRandomDot = (): Dot => {
   ];
 };
 
-const colors = ['blue', 'green', 'orange'];
-const sizes = ['small', 'large'];
+const colors = ['blue', 'green', 'orange'] as const;
+const sizes = ['small', 'large'] as const;
 
 const generateMockData = (n: number): Item[] => {
   return Array.from({ length: n }, (_, idx) => ({
@@ -49,13 +49,16 @@ const App = () => {
   const [items] = useState(generateMockData(21));
   const [selectedIds, setSelectedItems] = useState(Set<number>());
 
-  const handleSelect = (id: number) => {
-    if (selectedIds.has(id)) {
-      setSelectedItems(selectedIds.delete(id));
-    } else {
-      setSelectedItems(selectedIds.add(id));
-    }
-  };
+  const handleSelect = useCallback(
+    (id: number) => {
+      if (selectedIds.has(id)) {
+        setSelectedItems(selectedIds.delete(id));
+      } else {
+        setSelectedItems(selectedIds.add(id));
+      }
+    },
+    [selectedIds]
+  );
 
   const [target] = useState<{
     propName: keyof Item;
