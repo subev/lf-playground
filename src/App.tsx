@@ -47,31 +47,42 @@ const generateMockData = (n: number): Item[] => {
 
 const App = () => {
   const [items] = useState(generateMockData(21));
-  const [selectedIds, setSelectedItems] = useState(Set<number>());
+  const [history, setHistory] = useState([Set<number>()]);
+
+  const selectedIds = useMemo(() => {
+    return history[history.length - 1];
+  }, [history]);
 
   const handleSelect = useCallback(
     (id: number) => {
       if (selectedIds.has(id)) {
-        setSelectedItems(selectedIds.delete(id));
+        setHistory((s) => [...s, selectedIds.delete(id)]);
       } else {
-        setSelectedItems(selectedIds.add(id));
+        setHistory((s) => [...s, selectedIds.add(id)]);
       }
     },
     [selectedIds]
   );
+
+  const handleUndo = useCallback(() => {
+    if (history.length > 1) {
+      setHistory((s) => s.slice(0, -1));
+    }
+  }, [history.length]);
 
   const [target] = useState<{
     propName: keyof Item;
     value: Item[keyof Item];
     ratio: number;
   }>({
-    propName: 'size',
-    value: 'small',
+    propName: 'dot',
+    value: 'no-dot',
     ratio: 0.6,
   });
 
   return (
     <div className="App">
+      <button onClick={handleUndo}>undo</button>
       <Stats target={target} items={items} selectedIds={selectedIds} />
       <div className="container">
         {items.map((i, idx) => (
